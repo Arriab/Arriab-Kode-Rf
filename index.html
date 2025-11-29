@@ -1,179 +1,532 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kode Redeem Manager</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arriab Store — Redeem Manager</title>
 <style>
-body {
-    font-family: monospace;
-    background: #f5f5f5;
-    display: flex;
-    justify-content: center;
-    padding: 40px 20px;
-}
-.container {
-    background: #fff;
-    padding: 25px;
-    border-radius: 10px;
-    width: 100%;
-    max-width: 700px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-select, textarea, input, button {
-    padding: 10px;
-    width: 100%;
-    margin: 5px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    font-size: 14px;
-    font-family: monospace;
-}
-textarea { height: 100px; }
-button {
-    cursor: pointer;
-    background: #4CAF50;
-    color: white;
-    border: none;
-}
-button:hover { background: #45a049; }
-#stock, #codeList, #output {
-    margin-top: 15px;
-    padding: 15px;
-    background: #eee;
-    border-radius: 5px;
-    white-space: pre;
-    font-family: monospace;
-}
-.codeItem {
-    padding: 8px;
-    background: #d9f9d9;
-    margin-bottom: 5px;
-    border-radius: 5px;
-}
+    :root{
+        --bg:#f5f6fa;
+        --card:#ffffff;
+        --muted:#666;
+        --accent:#2f9e44;
+        --danger:#d9534f;
+        --glass: rgba(0,0,0,0.04);
+        --mono: "Courier New", Courier, monospace;
+    }
+    [data-theme="dark"]{
+        --bg:#0f1720;
+        --card:#0b1220;
+        --muted:#bfc8d6;
+        --accent:#28c76f;
+        --danger:#ff6b6b;
+        --glass: rgba(255,255,255,0.03);
+    }
+
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    body{background:var(--bg);padding:28px;display:flex;justify-content:center;box-sizing:border-box;color:var(--muted);}
+
+    .app {
+        width:100%; max-width:1100px;
+        display:grid;
+        grid-template-columns: 1fr 420px;
+        gap:20px;
+    }
+
+    .card {
+        background: linear-gradient(180deg, var(--card), var(--card));
+        border-radius:12px;
+        padding:16px;
+        box-shadow:0 6px 18px rgba(2,6,23,0.06);
+        color:var(--muted);
+    }
+
+    header.appHeader{
+        grid-column:1/-1;
+        display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;
+    }
+    .title { font-weight:700; color:var(--muted); font-size:18px; font-family:var(--mono); }
+    .small { font-size:13px; color:var(--muted); }
+
+    .controls { display:flex; gap:8px; align-items:center; }
+
+    select, input[type="number"], textarea {
+        width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass); background:transparent; color:var(--muted);
+        box-sizing:border-box; font-family:var(--mono); font-size:13px;
+    }
+    textarea { min-height:100px; resize:vertical; }
+
+    button {
+        padding:10px 12px; border-radius:8px; border:0; background:var(--accent); color:#fff; cursor:pointer; font-weight:600; font-family:var(--mono);
+    }
+    button.ghost { background:transparent; color:var(--muted); border:1px solid var(--glass); }
+    button.danger { background:var(--danger); }
+
+    .row { display:flex; gap:8px; align-items:center; }
+    .col { display:flex; flex-direction:column; gap:8px; }
+
+    h3 { margin:0; font-family:var(--mono); color:var(--muted); font-size:14px; }
+
+    .list { max-height:300px; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:8px; }
+    .codeItem { display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--glass); border-radius:8px; font-family:var(--mono); color:var(--muted); }
+    .meta { font-size:12px; color:var(--muted); }
+
+    .stockBar { font-family:var(--mono); font-size:13px; padding:8px; background:var(--glass); border-radius:8px; }
+
+    pre.outputBox{
+        margin:0; white-space:pre; font-family:var(--mono); color:var(--muted); font-size:13px; background:transparent; border:0;
+    }
+
+    .flexBetween { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+
+    .smallBtn { padding:6px 8px; border-radius:6px; background:transparent; border:1px solid var(--glass); color:var(--muted); cursor:pointer; font-family:var(--mono); }
+
+    footer { grid-column:1/-1; margin-top:8px; text-align:center; color:var(--muted); font-family:var(--mono); font-size:12px; }
+
+    /* Responsive */
+    @media (max-width:980px){
+        .app{ grid-template-columns: 1fr; }
+    }
+
+    /* modal */
+    .modal {
+        position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:50;
+    }
+    .modal.show { display:flex; }
+    .modalCard { width:100%; max-width:560px; background:var(--card); border-radius:10px; padding:16px; color:var(--muted); box-shadow:0 12px 40px rgba(2,6,23,0.5); font-family:var(--mono); }
+    .modalFooter { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
 </style>
 </head>
 <body>
-<div class="container">
 
-<h2>Kode Redeem Manager</h2>
+<div class="app">
 
-<!-- Tambah kode -->
-<select id="typeSelect">
-    <option value="7D">7 Day</option>
-    <option value="30D">30 Day</option>
-</select>
+    <header class="card appHeader">
+        <div>
+            <div class="title">Arriab Store — Redeem Manager</div>
+            <div class="small">Manage your redeem codes (7D / 30D). Client-side, GitHub Pages ready.</div>
+        </div>
 
-<textarea id="codeInput" placeholder="Masukkan kode redeem (1 kode per baris)"></textarea>
+        <div class="controls">
+            <button id="copyOutputBtn" class="ghost" title="Copy last output">Copy Output</button>
+            <button id="toggleTheme" class="smallBtn">Dark</button>
+        </div>
+    </header>
 
-<input type="number" id="quantityInput" value="1" min="1">
+    <!-- LEFT: management -->
+    <section class="card">
+        <h3>1) Add codes (one per line)</h3>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <select id="typeSelect" style="width:160px;">
+                <option value="7D">7 Day</option>
+                <option value="30D">30 Day</option>
+            </select>
 
-<button onclick="addCode()">Tambah Kode</button>
+            <input type="number" id="quantityInput" min="1" value="1" style="width:120px;" title="Quantity each code">
+        </div>
 
-<hr>
+        <textarea id="codeInput" placeholder="Paste codes here, one code per line (no duplicates)"></textarea>
 
-<!-- Ambil kode -->
-<h3>Ambil Kode:</h3>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="addBtn">Add codes</button>
+            <button id="clearAll" class="ghost">Clear all codes</button>
+            <button id="deleteDup" class="ghost">Remove duplicates</button>
+        </div>
 
-<select id="redeemType">
-    <option value="7D">7 Day</option>
-    <option value="30D">30 Day</option>
-</select>
+        <hr style="margin:12px 0">
 
-<input type="number" id="redeemQty" value="1" min="1">
+        <h3>2) Pricing (editable)</h3>
+        <div class="row" style="margin-bottom:8px;">
+            <div style="flex:1;">
+                <label class="small">Price 7D (Rp)</label>
+                <input type="number" id="price7" value="21000" min="0" />
+            </div>
+            <div style="flex:1;">
+                <label class="small">Price 30D (Rp)</label>
+                <input type="number" id="price30" value="61000" min="0" />
+            </div>
+        </div>
 
-<button onclick="redeemMultiple()">Ambil Kode</button>
+        <hr style="margin:12px 0">
 
-<h3>Stock:</h3>
-<div id="stock"></div>
+        <h3>3) Export / Import</h3>
+        <div class="row">
+            <button id="exportJson" class="ghost">Export JSON</button>
+            <button id="importJson" class="ghost">Import JSON</button>
+            <input type="file" id="importFile" style="display:none" accept="application/json" />
+        </div>
 
-<h3>Daftar Kode:</h3>
-<div id="codeList"></div>
+        <hr style="margin:12px 0">
 
-<h3>Output:</h3>
-<div id="output"></div>
+        <h3>4) History & logs</h3>
+        <div class="small" style="margin-bottom:8px;">Auto log every redeem action. Can export history too.</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="exportLog" class="ghost">Export Log</button>
+            <button id="clearLog" class="ghost">Clear Log</button>
+        </div>
+        <div id="logList" class="list" style="max-height:200px;"></div>
 
+    </section>
+
+    <!-- RIGHT: stock / redeem / output -->
+    <aside class="card">
+        <div class="flexBetween">
+            <h3>Stock</h3>
+            <div class="small stockBar" id="stockBar">-</div>
+        </div>
+
+        <h3 style="margin-top:12px">Redeem (take)</h3>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <select id="redeemType" style="width:140px">
+                <option value="7D">7 Day</option>
+                <option value="30D">30 Day</option>
+            </select>
+            <input type="number" id="redeemQty" value="1" min="1" style="width:110px" />
+            <button id="previewRedeem" style="flex:1">Preview</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="redeemBtn">Confirm & Redeem</button>
+            <button id="copyCodes" class="ghost">Copy Codes Only</button>
+            <button id="printInvoice" class="ghost">Print</button>
+        </div>
+
+        <h3 style="margin-top:12px">Available Codes</h3>
+        <div class="list" id="codeList" style="margin-bottom:8px;"></div>
+
+        <div style="display:flex;gap:8px;">
+            <button id="deleteSelected" class="danger ghost">Delete Selected</button>
+            <div style="flex:1"></div>
+        </div>
+
+        <hr style="margin:12px 0">
+
+        <h3>Output</h3>
+        <div id="output" class="card" style="min-height:160px; padding:12px; background:var(--glass);"></div>
+    </aside>
+
+    <footer class="small">Built for Arriab Store — client-side. Keep your browser data safe.</footer>
+</div>
+
+<!-- Preview modal -->
+<div id="modal" class="modal">
+    <div class="modalCard">
+        <h3>Preview Redeem</h3>
+        <pre id="previewText" style="white-space:pre-wrap; max-height:400px; overflow:auto;"></pre>
+        <div class="modalFooter">
+            <button id="modalCancel" class="ghost">Cancel</button>
+            <button id="modalConfirm">Confirm Redeem</button>
+        </div>
+    </div>
 </div>
 
 <script>
-let codes = JSON.parse(localStorage.getItem('codes')) || [];
-const stockDiv = document.getElementById('stock');
-const codeListDiv = document.getElementById('codeList');
-const outputDiv = document.getElementById('output');
+/* ---------- Storage keys ---------- */
+const KEY_CODES = "arriab_codes_v1";
+const KEY_LOGS = "arriab_logs_v1";
+const KEY_PRICES = "arriab_prices_v1";
+const KEY_THEME = "arriab_theme_v1";
 
-function updateStock() {
-    let s7 = codes.filter(c => c.type === "7D").reduce((a,b)=>a+b.quantity, 0);
-    let s30 = codes.filter(c => c.type === "30D").reduce((a,b)=>a+b.quantity, 0);
-    stockDiv.textContent = `7 Day: ${s7} | 30 Day: ${s30}`;
+/* ---------- App state ---------- */
+let codes = JSON.parse(localStorage.getItem(KEY_CODES) || "[]"); // array of {type,code,quantity}
+let logs = JSON.parse(localStorage.getItem(KEY_LOGS) || "[]");
+let prices = JSON.parse(localStorage.getItem(KEY_PRICES) || '{"7D":21000,"30D":61000}');
+let theme = localStorage.getItem(KEY_THEME) || "light";
+
+/* ---------- Elements ---------- */
+const el = id => document.getElementById(id);
+const typeSelect = el("typeSelect");
+const codeInput = el("codeInput");
+const quantityInput = el("quantityInput");
+const addBtn = el("addBtn");
+const codeListMain = document.querySelectorAll("#codeList")[0]; // left list id collision avoided
+const codeListRight = document.querySelectorAll("#codeList")[1]; // right list
+const stockBar = el("stockBar");
+const price7 = el("price7");
+const price30 = el("price30");
+const exportJson = el("exportJson");
+const importJson = el("importJson");
+const importFile = el("importFile");
+const deleteDup = el("deleteDup");
+const clearAll = el("clearAll");
+const logList = el("logList");
+const exportLog = el("exportLog");
+const clearLog = el("clearLog");
+const redeemType = el("redeemType");
+const redeemQty = el("redeemQty");
+const redeemBtn = el("redeemBtn");
+const previewBtn = el("previewRedeem");
+const modal = el("modal");
+const previewText = el("previewText");
+const modalCancel = el("modalCancel");
+const modalConfirm = el("modalConfirm");
+const outputBox = el("output");
+const copyOutputBtn = el("copyOutputBtn");
+const copyCodesBtn = el("copyCodes");
+const printInvoice = el("printInvoice");
+const toggleTheme = el("toggleTheme");
+const addClearSelectedBtn = el("deleteSelected");
+const deleteSelectedBtn = el("deleteSelected");
+const deleteDupBtn = el("deleteDup");
+const exportLogBtn = el("exportLog");
+const clearLogBtn = el("clearLog");
+const importBtnHidden = el("importJson");
+
+/* ---------- Init ---------- */
+function init(){
+    // load prices
+    try{
+        prices = JSON.parse(localStorage.getItem(KEY_PRICES) || '{"7D":21000,"30D":61000}');
+    }catch(e){
+        prices = {"7D":21000,"30D":61000};
+    }
+    price7.value = prices["7D"];
+    price30.value = prices["30D"];
+
+    // theme
+    if(theme === "dark"){ document.documentElement.setAttribute("data-theme","dark"); toggleTheme.textContent = "Light"; } 
+    else { document.documentElement.removeAttribute("data-theme"); toggleTheme.textContent = "Dark"; }
+
+    renderAll();
+}
+init();
+
+/* ---------- Helpers ---------- */
+function saveCodes(){ localStorage.setItem(KEY_CODES, JSON.stringify(codes)); }
+function saveLogs(){ localStorage.setItem(KEY_LOGS, JSON.stringify(logs)); }
+function savePrices(){ localStorage.setItem(KEY_PRICES, JSON.stringify(prices)); }
+function saveTheme(){ localStorage.setItem(KEY_THEME, theme); }
+
+function normalizeCode(s){
+    // safety cleaning: uppercase, trim, replace multiple spaces, keep hyphens
+    return s.toUpperCase().replace(/[^\w-]/g,'').replace(/-{2,}/g,'-').trim();
 }
 
-function displayCodes() {
-    updateStock();
-    codeListDiv.innerHTML = "";
-    codes.forEach(c=>{
-        let d = document.createElement("div");
-        d.className = "codeItem";
-        d.textContent = `${c.type} : ${c.code} (x${c.quantity})`;
-        codeListDiv.appendChild(d);
-    });
+function formatRp(n){
+    return n.toLocaleString('id');
 }
 
-function addCode() {
-    const type = document.getElementById("typeSelect").value;
-    const input = document.getElementById("codeInput").value.trim();
-    const qty = parseInt(document.getElementById("quantityInput").value);
-
-    if(!input) return;
-
-    const lines = input.split(/\r?\n/);
-    lines.forEach(line=>{
-        const code = line.trim();
-        if(code){
-            let exist = codes.find(c=>c.code===code && c.type===type);
-            if(exist) exist.quantity += qty;
-            else codes.push({type:type, code:code, quantity:qty});
-        }
-    });
-
-    localStorage.setItem("codes", JSON.stringify(codes));
-    document.getElementById("codeInput").value = "";
-    document.getElementById("quantityInput").value = 1;
-    displayCodes();
+/* ---------- Render ---------- */
+function updateStockDisplay(){
+    let s7 = codes.filter(c=>c.type==="7D").reduce((a,b)=>a+b.quantity,0);
+    let s30 = codes.filter(c=>c.type==="30D").reduce((a,b)=>a+b.quantity,0);
+    stockBar.textContent = `7D: ${s7}  |  30D: ${s30}`;
 }
 
-function redeemMultiple(){
-    let type = document.getElementById("redeemType").value;
-    let takeQty = parseInt(document.getElementById("redeemQty").value);
-
-    // Filter hanya tipe yang dipilih
-    let filtered = [];
-    codes.forEach(c=>{
-        if(c.type===type){
-            for(let i=0;i<c.quantity;i++){
-                filtered.push({...c});
-            }
-        }
+function renderCodes(){
+    // left small list: codeListMain
+    codeListMain.innerHTML = "";
+    codes.forEach((c, idx)=>{
+        let node = document.createElement("div");
+        node.className = "codeItem";
+        node.dataset.idx = idx;
+        node.innerHTML = `<div style="display:flex;flex-direction:column;">
+                <div><strong>${c.type}</strong> &nbsp; <span class="meta">${c.code}</span></div>
+                <div class="meta">Quantity: ${c.quantity}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <button class="smallBtn" onclick="increase(${idx})">+1</button>
+                <button class="smallBtn" onclick="decrease(${idx})">-1</button>
+                <button class="smallBtn" onclick="delOne(${idx})">Delete</button>
+            </div>`;
+        codeListMain.appendChild(node);
     });
 
-    if(takeQty > filtered.length){
-        alert(`Stok ${type} kurang! Tersedia ${filtered.length}`);
+    // right list: simpler textual items
+    codeListRight.innerHTML = "";
+    codes.forEach((c, idx)=>{
+        let node = document.createElement("div");
+        node.className = "codeItem";
+        node.innerHTML = `${c.type} : ${c.code} (x${c.quantity})`;
+        codeListRight.appendChild(node);
+    });
+
+    updateStockDisplay();
+}
+
+function renderLogs(){
+    logList.innerHTML = "";
+    if(logs.length === 0){
+        logList.innerHTML = `<div class="meta">No history yet.</div>`;
         return;
     }
+    logs.slice().reverse().forEach(l=>{
+        let node = document.createElement("div");
+        node.className = "codeItem";
+        node.style.flexDirection = "column";
+        node.innerHTML = `<div style="display:flex;justify-content:space-between">
+            <div><strong>${l.type}</strong> - ${l.qty} pcs</div>
+            <div class="meta">${l.when}</div>
+            </div>
+            <div class="meta">${l.codes.join(", ")}</div>
+            <div class="meta">Rp ${formatRp(l.total)}</div>`;
+        logList.appendChild(node);
+    });
+}
 
-    let taken = filtered.slice(0, takeQty);
+function renderAll(){
+    renderCodes();
+    renderLogs();
+}
 
-    let unitPrice = type==="7D" ? 21000 : 61000;
-    let totalPrice = (unitPrice*takeQty).toLocaleString("id");
+/* ---------- CRUD helpers ---------- */
+function increase(idx){ codes[idx].quantity += 1; saveCodes(); renderAll(); }
+function decrease(idx){
+    codes[idx].quantity -= 1;
+    if(codes[idx].quantity <= 0) codes.splice(idx,1);
+    saveCodes(); renderAll();
+}
+function delOne(idx){
+    if(!confirm("Delete this code?")) return;
+    codes.splice(idx,1);
+    saveCodes(); renderAll();
+}
 
-    let codeLines = taken.map(c=>c.code).join("\n               ");
+/* ---------- Add codes ---------- */
+addBtn.addEventListener("click", ()=>{
+    const type = typeSelect.value;
+    const qty = Math.max(1, parseInt(quantityInput.value) || 1);
+    const raw = codeInput.value.trim();
+    if(!raw){ alert("Masukkan kode terlebih dahulu."); return; }
 
-    outputDiv.textContent =
+    const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+    let added = 0;
+    lines.forEach(l=>{
+        const cleaned = normalizeCode(l);
+        if(!cleaned) return;
+        // safety: if same code exists with same type -> increase qty, otherwise add
+        const idx = codes.findIndex(c => c.code === cleaned && c.type === type);
+        if(idx >= 0){
+            codes[idx].quantity += qty;
+        } else {
+            codes.push({ type: type, code: cleaned, quantity: qty });
+        }
+        added++;
+    });
+
+    saveCodes();
+    codeInput.value = "";
+    quantityInput.value = 1;
+    renderAll();
+
+    alert(`${added} kode ditambahkan.`);
+});
+
+/* ---------- Safety / Dedupe ---------- */
+deleteDup.addEventListener("click", ()=>{
+    const key = {};
+    const before = codes.length;
+    codes = codes.filter(c=>{
+        const k = c.type + "|" + c.code;
+        if(key[k]){ return false; }
+        key[k]=true; return true;
+    });
+    saveCodes();
+    renderAll();
+    alert(`Duplicates removed. ${before - codes.length} removed.`);
+});
+
+clearAll.addEventListener("click", ()=>{
+    if(!confirm("Clear all codes? This cannot be undone.")) return;
+    codes = [];
+    saveCodes();
+    renderAll();
+});
+
+/* ---------- Export / Import ---------- */
+exportJson.addEventListener("click", ()=>{
+    const data = { codes, prices, when: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "arriab_codes_export.json"; a.click();
+    URL.revokeObjectURL(url);
+});
+
+importJson.addEventListener("click", ()=> importFile.click());
+
+importFile.addEventListener("change", (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        try{
+            const data = JSON.parse(ev.target.result);
+            if(Array.isArray(data.codes)){
+                // merge safely: add quantities for existing codes
+                data.codes.forEach(c=>{
+                    if(!c.code || !c.type) return;
+                    const cleaned = normalizeCode(c.code);
+                    const qty = parseInt(c.quantity) || 1;
+                    const idx = codes.findIndex(x=>x.code===cleaned && x.type===c.type);
+                    if(idx>=0) codes[idx].quantity += qty;
+                    else codes.push({type:c.type, code:cleaned, quantity:qty});
+                });
+                saveCodes(); renderAll();
+                alert("Import berhasil.");
+            } else alert("File tidak valid.");
+        }catch(err){
+            alert("Unable to parse file: " + err);
+        }
+    };
+    reader.readAsText(f);
+});
+
+/* ---------- Log export/clear ---------- */
+exportLog.addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(logs, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "arriab_logs.json"; a.click();
+    URL.revokeObjectURL(url);
+});
+clearLog.addEventListener("click", ()=>{
+    if(!confirm("Clear history logs?")) return;
+    logs = [];
+    saveLogs();
+    renderLogs();
+});
+
+/* ---------- Pricing ---------- */
+price7.addEventListener("change", ()=>{
+    prices["7D"] = Math.max(0, parseInt(price7.value) || 0);
+    savePrices();
+});
+price30.addEventListener("change", ()=>{
+    prices["30D"] = Math.max(0, parseInt(price30.value) || 0);
+    savePrices();
+});
+
+/* ---------- Redeem flow (preview + confirm) ---------- */
+function buildFlatListForType(type){
+    // returns flattened array of objects for each unit: {type, code}
+    const flat = [];
+    codes.forEach(c=>{
+        if(c.type === type){
+            for(let i=0;i<c.quantity;i++) flat.push({type:c.type, code:c.code});
+        }
+    });
+    return flat;
+}
+
+previewBtn.addEventListener("click", ()=>{
+    const type = redeemType.value;
+    const qty = Math.max(1, parseInt(redeemQty.value) || 1);
+    const flat = buildFlatListForType(type);
+    if(qty > flat.length){ alert(`Stok ${type} tidak cukup (tersedia ${flat.length}).`); return; }
+
+    const taken = flat.slice(0, qty);
+    // format output as requested: aligned right of label
+    const unit = prices[type] || (type==="7D"?21000:61000);
+    const total = unit * qty;
+
+    const codesText = taken.map(x=>x.code).join("\n               ");
+
+    const txt =
 `== ORDER CONFIRMATION ==
 Product      : VIP Redeem Code ${type} (Redfinger)
-Quantity     : ${takeQty}
-Total Price  : Rp ${totalPrice}
-Redeem Code  : ${codeLines}
+Quantity     : ${qty}
+Total Price  : Rp ${formatRp(total)}
+Redeem Code  : ${codesText}
 
 Note:
 - Each code can be used for NewCloud and RenewCloud.
@@ -182,21 +535,15 @@ Note:
 
 Thank you for ordering from Arriab Store!`;
 
-    // Hapus dari stok
-    taken.forEach(t=>{
-        let idx = codes.findIndex(c=>c.code===t.code && c.type===type);
-        if(idx>=0){
-            codes[idx].quantity -= 1;
-            if(codes[idx].quantity <= 0) codes.splice(idx, 1);
-        }
-    });
+    previewText.textContent = txt;
+    modal.classList.add("show");
+});
 
-    localStorage.setItem("codes", JSON.stringify(codes));
-    displayCodes();
-}
+modalCancel.addEventListener("click", ()=> modal.classList.remove("show"));
 
-displayCodes();
-</script>
+modalConfirm.addEventListener("click", ()=>{
+    modal.classList.remove("show");
+    doRedeem(); // perform actual redeem
+});
 
-</body>
-</html>
+/* ---------- Redeem implementation
